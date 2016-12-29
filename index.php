@@ -30,15 +30,14 @@ var projection = d3.geo.orthographic()
     .clipAngle(90)
     .precision(0.6);
 
-var canvas = d3.select("body").append("canvas")
+var svg = d3.select("body").append("svg")
     .attr("width", width)
     .attr("height", height);
 
-var c = canvas.node().getContext("2d");
+var g = svg.append("g");
 
 var path = d3.geo.path()
-    .projection(projection)
-    .context(c);
+    .projection(projection);
 
 queue()
     .defer(d3.json, "world-110m.json")
@@ -67,8 +66,26 @@ function x(world, names, airports, flights){
       console.log(d);
     }
 
-    c.clearRect(0, 0, width, height);
+    //c.clearRect(0, 0, width, height);
+    g.selectAll("path")
+      .data(borders)
+      .enter()
+      .append("path")
+      .attr("d", path);
 
+    g.selectAll("path")
+      .data(land)
+      .enter()
+      .append("path")
+      .attr("d", path);
+
+    g.selectAll("path")
+      .data(countries)
+      .enter()
+      .append("path")
+      .attr("d", path)
+
+    /**
     c.fillStyle = "rgba(102, 204, 255,0.5)", c.beginPath(), path(globe), c.fill();
     c.fillStyle = "rgb(255, 153, 102)", c.beginPath(), path(land), c.fill();
     c.strokeStyle = "#fff", c.lineWidth = .5, c.beginPath(), path(borders), c.stroke();
@@ -112,7 +129,8 @@ function x(world, names, airports, flights){
       circles.push(
         d3.geo.circle()
           .angle(airports[i].total_traffic / m)
-          .origin([parseFloat(airports[i].longitude), parseFloat(airports[i].latitude)])());
+          .origin([parseFloat(airports[i].longitude), parseFloat(airports[i].latitude)])()
+      );
     }
 
     c.beginPath();
@@ -122,6 +140,7 @@ function x(world, names, airports, flights){
     c.lineWidth = .2;
     c.strokeStyle = "#000";
     c.stroke();
+    */
 }
 
   dragBehaviour = d3.behavior.drag()
@@ -159,7 +178,7 @@ function x(world, names, airports, flights){
       .scaleExtent([scale0, 8 * scale0])
       .on("zoom", zoomed);
 
-  d3.select("body").select('canvas').call(dragBehaviour).call(zoom).call(zoom.event);
+  svg.call(dragBehaviour).call(zoom).call(zoom.event);
   
 
   redraw(airports);

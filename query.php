@@ -7,10 +7,10 @@ switch($_GET['q']){
 		flights();
 		break;
 	case 'airports':
-		airports();
+		airports($_GET['a']);
 		break;
-	case 'most-incoming':
-		mostIncoming();
+	case 'flights-by-airport':
+		getFlightsByAirports($_POST['airports']);
 		break;
 }
 
@@ -25,7 +25,7 @@ function getJSONFromQuery($query){
 	    }
 	    echo json_encode($result_as_array);
 	} else{
-		echo "Error: " . $sql . "<br>" . $GLOBALS['conn']->error;
+		echo "Error: " . $query . "<br>" . $GLOBALS['conn']->error;
 	}
 }
 
@@ -36,20 +36,25 @@ function flights(){
 	);
 }
 
-function airports(){
+function airports($amount){
 	getJSONFromQuery(
 		" SELECT z.airport, z.total_traffic, z.incoming, z.outgoing, latitude, longitude FROM airports, 
 			( SELECT x.airport as airport, (x.c + y.c) as total_traffic, x.c as incoming, y.c as outgoing from
-				( SELECT dest as airport, count(dest) as c FROM flights group by dest order by c DESC LIMIT 15 ) as x,
-				( SELECT origin as airport, count(origin) as c FROM flights group by origin order by c DESC LIMIT 15 ) as y
+				( SELECT dest as airport, count(dest) as c FROM flights group by dest order by c DESC LIMIT $amount ) as x,
+				( SELECT origin as airport, count(origin) as c FROM flights group by origin order by c DESC LIMIT $amount ) as y
 				WHERE x.airport = y.airport order by total_traffic DESC
 			) as z
 		 WHERE z.airport = airports.IATA"
 	);
 }
 
-function mostIncoming(){
+function getFlightsByAirports($airports){
+	$airports = implode("','",$airports);
 	getJSONFromQuery(
-		
-	);	
+		" 	SELECT x.dest as dest, y.dest as dest2, (x.c + y.c) as total_traffic, x.c as incoming, y.c as outgoing from
+				( SELECT origin, dest, count(*) as c FROM flights WHERE origin IN ('$airports') and dest IN ('$airports') group by dest, origin ) as x,
+				( SELECT origin, dest, count(*) as c FROM flights WHERE origin IN ('$airports') and dest IN ('$airports') group by origin, dest ) as y
+		  	WHERE x.dest = y.origin and x.origin = y.dest 
+		"
+	);
 }
