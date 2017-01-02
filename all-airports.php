@@ -211,7 +211,6 @@ select {
       });
 
     function redraw(){
-      var centerPos = proj.invert([width/2,height/2]);
       
       svg.selectAll("path").attr("d", path);
       svg.selectAll(".focused").classed("focused", focused = false);

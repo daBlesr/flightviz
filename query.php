@@ -7,7 +7,7 @@ switch($_GET['q']){
 		allAirports();
 		break;
 	case 'flights':
-		flights();
+		flights($_POST['airports'], $_GET['iata']);
 		break;
 	case 'airports':
 		airports($_GET['a']);
@@ -33,9 +33,14 @@ function getJSONFromQuery($query){
 }
 
 
-function flights(){
+function flights($airports, $iata){
+	$airports = implode("','",$airports);
 	getJSONFromQuery(
-		" SELECT * FROM flights LIMIT 5"
+		" 	SELECT x.dest as dest, y.dest as dest2, (x.c + y.c) as total_traffic, x.c as incoming, y.c as outgoing from
+				( SELECT origin, dest, count(*) as c FROM flights WHERE origin = '$iata' and dest IN ('$airports') group by dest, origin ) as x,
+				( SELECT origin, dest, count(*) as c FROM flights WHERE origin IN ('$airports') and dest = '$iata' group by origin, dest ) as y
+		  	WHERE x.dest = y.origin and x.origin = y.dest 
+		"
 	);
 }
 
@@ -48,7 +53,7 @@ function allAirports(){
 
 function airports($amount){
 	getJSONFromQuery(
-		" SELECT city, z.airport, z.total_traffic, z.incoming, z.outgoing, latitude, longitude FROM airports, 
+		" SELECT name, city, z.airport, z.total_traffic, z.incoming, z.outgoing, latitude, longitude FROM airports, 
 			( SELECT x.airport as airport, (x.c + y.c) as total_traffic, x.c as incoming, y.c as outgoing from
 				( SELECT dest as airport, count(dest) as c FROM flights group by dest order by c DESC LIMIT $amount ) as x,
 				( SELECT origin as airport, count(origin) as c FROM flights group by origin order by c DESC LIMIT $amount ) as y
