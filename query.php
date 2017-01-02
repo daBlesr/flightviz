@@ -3,6 +3,9 @@ include_once('db.php');
 
 
 switch($_GET['q']){
+	case 'all-airports':
+		allAirports();
+		break;
 	case 'flights':
 		flights();
 		break;
@@ -36,9 +39,16 @@ function flights(){
 	);
 }
 
+function allAirports(){
+	getJSONFromQuery(
+		"SELECT id, city, name, latitude, longitude FROM airports"
+	);
+}
+
+
 function airports($amount){
 	getJSONFromQuery(
-		" SELECT z.airport, z.total_traffic, z.incoming, z.outgoing, latitude, longitude FROM airports, 
+		" SELECT city, z.airport, z.total_traffic, z.incoming, z.outgoing, latitude, longitude FROM airports, 
 			( SELECT x.airport as airport, (x.c + y.c) as total_traffic, x.c as incoming, y.c as outgoing from
 				( SELECT dest as airport, count(dest) as c FROM flights group by dest order by c DESC LIMIT $amount ) as x,
 				( SELECT origin as airport, count(origin) as c FROM flights group by origin order by c DESC LIMIT $amount ) as y
