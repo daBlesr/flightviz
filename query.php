@@ -36,10 +36,10 @@ function getJSONFromQuery($query){
 function flights($airports, $iata){
 	$airports = implode("','",$airports);
 	getJSONFromQuery(
-		" 	SELECT x.dest as dest, y.dest as dest2, (x.c + y.c) as total_traffic, x.c as incoming, y.c as outgoing from
+		" 	SELECT x.dest as dest, y.dest as dest2, (x.c + y.c) as total_traffic, x.c as incoming, y.c as outgoing, a1.latitude as latitude1, a1.longitude as longitude1, a2.latitude as latitude2, a2.longitude as longitude2  from airports a1, airports a2,
 				( SELECT origin, dest, count(*) as c FROM flights WHERE origin = '$iata' and dest IN ('$airports') group by dest, origin ) as x,
 				( SELECT origin, dest, count(*) as c FROM flights WHERE origin IN ('$airports') and dest = '$iata' group by origin, dest ) as y
-		  	WHERE x.dest = y.origin and x.origin = y.dest 
+		  	WHERE x.dest = y.origin and x.origin = y.dest  and a1.IATA = x.origin and a2.IATA = x.dest
 		"
 	);
 }
@@ -66,10 +66,10 @@ function airports($amount){
 function getFlightsByAirports($airports){
 	$airports = implode("','",$airports);
 	getJSONFromQuery(
-		" 	SELECT x.dest as dest, y.dest as dest2, (x.c + y.c) as total_traffic, x.c as incoming, y.c as outgoing from
+		" SELECT x.dest as dest, y.dest as dest2, (x.c + y.c) as total_traffic, a1.latitude as latitude1, a1.longitude as longitude1, a2.latitude as latitude2, a2.longitude as longitude2 FROM airports a1, airports a2,
 				( SELECT origin, dest, count(*) as c FROM flights WHERE origin IN ('$airports') and dest IN ('$airports') group by dest, origin ) as x,
 				( SELECT origin, dest, count(*) as c FROM flights WHERE origin IN ('$airports') and dest IN ('$airports') group by origin, dest ) as y
-		  	WHERE x.dest = y.origin and x.origin = y.dest 
+		  	WHERE x.dest = y.origin and x.origin = y.dest and a1.IATA = x.origin and a2.IATA = x.dest
 		"
 	);
 }

@@ -21,6 +21,24 @@
 }
 
 
+.arcs {
+  opacity:.1;
+  stroke: gray;
+  stroke-width: 3;
+}
+.flyers {
+  stroke-width:2;
+  opacity: .6;
+  stroke: darkred; 
+}
+.arc, .flyer {
+  stroke-linejoin: round;
+  fill:none;
+}
+  .arc { }
+  .flyer { }
+  .flyer:hover { }
+
 select {
   position: absolute;
   top: 20px;
@@ -76,7 +94,17 @@ select {
     .attr("width", width)
     .attr("height", height);
 
-    var traffic = [];
+    var traffic = d3.svg.line()
+      .x(function(d) { return d[0] })
+      .y(function(d) { return d[1] })
+      .interpolate("cardinal")
+      .tension(.0);
+
+    var sky = d3.geo.orthographic()
+    .translate([width / 2, height / 2])
+    .clipAngle(90)
+    .rotate([0, 0])
+    .scale(300);
 
     //Adding water
 
@@ -84,6 +112,8 @@ select {
     .datum({type: "Sphere"})
     .attr("class", "water")
     .attr("d", path);
+
+    var links = [], arcLines = [];
 
     var airportTooltip = d3.select("body").append("div").attr("class", "airportTooltip"),
     airportList = d3.select("body").append("select").attr("name", "airports");
@@ -96,7 +126,7 @@ select {
     queue()
     .defer(d3.json, "world-110m.json")
     .defer(d3.tsv, "world-country-names.tsv")
-    .defer(d3.json, "query.php?q=airports&a=20")
+    .defer(d3.json, "query.php?q=airports&a=100")
     .await(loadFlightData);
 
     function loadFlightData(error, world, countryData, airports){
@@ -111,6 +141,32 @@ select {
     }
 
     //Main function
+    function redrawAirports(){
+        var arc = d3.geo.greatArc();
+        var centerPos = projection.invert([width/2,height/2]);
+        
+        svg.selectAll("circle")
+          .attr("cx", function (d) { return projection([parseFloat(d.longitude),parseFloat(d.latitude)])[0]; })
+          .attr("cy", function (d) { return projection([parseFloat(d.longitude),parseFloat(d.latitude)])[1]; })
+          .attr("opacity", function(d) {
+             var x = [parseFloat(d.longitude),parseFloat(d.latitude)];
+            var dis = arc.distance({source: x, target: centerPos});
+            return (dis > 1.57) ? '0' : '1';
+          });
+      }
+
+      function redraw(){
+        svg.selectAll("path").attr("d", path);
+        svg.selectAll(".focused").classed("focused", focused = false); 
+        
+        svg.selectAll(".flyer")
+          .attr("d", function(d) { return traffic(flying_arc(d)) })
+          .attr("opacity", function(d) {
+            return fade_at_edge(d)
+          });
+
+        redrawAirports();
+      }
 
     function ready(error, world, countryData, airports, flights) {
 
@@ -129,13 +185,14 @@ select {
 
       var m = 0;
       for(var i = 0; i < airports.length; i++){
-        if(airports[i].total_traffic > m) m = airports[i].total_traffic;
+        if(parseInt(airports[i].total_traffic) > m) m = parseInt(airports[i].total_traffic);
       }
 
       //Drawing countries on the globe
 
       function zoomed() {
         projection.scale(zoom.scale());
+        sky.scale(zoom2.scale());
         redraw();
       }
 
@@ -145,17 +202,22 @@ select {
         .scaleExtent([scale0, 8 * scale0])
         .on("zoom", zoomed);
 
+      var zoom2 = d3.behavior.zoom()
+        .translate([width / 2, height / 2])
+        .scale(scale0 * 1.2)
+        .scaleExtent([scale0 * 1.2, 8 * 1.2 * scale0])
+        .on("zoom", zoomed);
+
       var globe = svg.selectAll("path")
         .call(d3.behavior.drag()
         .origin(function() { var r = projection.rotate(); return {x: r[0] / sens, y: -r[1] / sens}; })
         .on("drag", function() {
           var rotate = projection.rotate();
+          sky.rotate([d3.event.x * sens, -d3.event.y * sens, rotate[2]]);
           projection.rotate([d3.event.x * sens, -d3.event.y * sens, rotate[2]]);
           redraw();
         }))
         .call(zoom);
-
-      console.log(countries);
 
       var world = svg.selectAll("path.land")
       .data(countries)
@@ -167,6 +229,7 @@ select {
         .origin(function() { var r = projection.rotate(); return {x: r[0] / sens, y: -r[1] / sens}; })
         .on("drag", function() {
           var rotate = projection.rotate();
+          sky.rotate([d3.event.x * sens, -d3.event.y * sens, rotate[2]]);
           projection.rotate([d3.event.x * sens, -d3.event.y * sens, rotate[2]]);
           redraw();
         }))
@@ -195,8 +258,14 @@ select {
         })
         })();
 
-        updateAirportSelection(focusedAirport);
+        updateAirportSelection(focusedAirport, airports);
       });
+
+      function airportRadius(total_traffic){
+        var g = parseInt(total_traffic) / m * 10 + 3;
+        if(g > 10) return 10;
+        return g;
+      }
 
       var circles_svg = svg.selectAll("circle")
         .data(airports)
@@ -205,7 +274,7 @@ select {
         .attr("class","airport")
         .attr("cx", function (d) { return projection([parseFloat(d.longitude),parseFloat(d.latitude)])[0]; })
         .attr("cy", function (d) { return projection([parseFloat(d.longitude),parseFloat(d.latitude)])[1]; })
-        .attr("r", function (d) {return (parseFloat(10 * d.total_traffic / m ))+ "px"; })
+        .attr("r", function (d) {return airportRadius(d.total_traffic); })
         .on("mouseover", function(d) {
           airportTooltip.text((d.city + ": " + d.name).replace("Intl",""))
           .style("left", (d3.event.pageX + 7) + "px")
@@ -214,7 +283,7 @@ select {
           .style("opacity", 1);
           d3.select(this).attr({
             fill: "green",
-            r: (parseFloat(10 * d.total_traffic / m )) * 2
+            r: airportRadius(d.total_traffic) * 2
           });
           updateAirportSelection(d, airports);
         })
@@ -223,7 +292,7 @@ select {
           .style("display", "none");
           d3.select(this).attr({
             fill: "black",
-            r: (parseFloat(10 * d.total_traffic / m ))
+            r: airportRadius(d.total_traffic)
           });
         })
         .on("mousemove", function(d) {
@@ -231,25 +300,7 @@ select {
           .style("top", (d3.event.pageY - 15) + "px");
         });
 
-      function redrawAirports(){
-        var arc = d3.geo.greatArc();
-        var centerPos = projection.invert([width/2,height/2]);
-        
-        svg.selectAll("circle")
-          .attr("cx", function (d) { return projection([parseFloat(d.longitude),parseFloat(d.latitude)])[0]; })
-          .attr("cy", function (d) { return projection([parseFloat(d.longitude),parseFloat(d.latitude)])[1]; })
-          .attr("opacity", function(d) {
-             var x = [parseFloat(d.longitude),parseFloat(d.latitude)];
-            var dis = arc.distance({source: x, target: centerPos});
-            return (dis > 1.57) ? '0' : '1';
-          });
-      }
-
-      function redraw(){
-        svg.selectAll("path").attr("d", path);
-        svg.selectAll(".focused").classed("focused", focused = false); 
-        redrawAirports();
-      }
+      
 
       redraw();
 
@@ -261,6 +312,46 @@ select {
 
     };
 
+    function location_along_arc(start, end, loc) {
+      var interpolator = d3.geo.interpolate(start,end);
+      return interpolator(loc)
+    }
+
+    function flying_arc(pts) {
+      var source = pts.source,
+          target = pts.target;
+
+      var mid = location_along_arc(source, target, .5);
+      var result = [ projection(source),
+                     sky(mid),
+                     projection(target) ];
+      return result;
+    }
+
+    function fade_at_edge(d) {
+      var centerPos = projection.invert([width/2,height/2]),
+          arc = d3.geo.greatArc(),
+          start, end;
+      // function is called on 2 different data structures..
+      if (d.source) {
+        start = d.source, 
+        end = d.target;  
+      }
+      else {
+        start = d.geometry.coordinates[0];
+        end = d.geometry.coordinates[1];
+      }
+      
+      var start_dist = 1.57 - arc.distance({source: start, target: centerPos}),
+          end_dist = 1.57 - arc.distance({source: end, target: centerPos});
+        
+      var fade = d3.scale.linear().domain([-.1,0]).range([0,.1]) 
+      var dist = start_dist < end_dist ? start_dist : end_dist; 
+
+      return fade(dist)
+    }
+
+
     function updateAirportSelection(d, airports){
       airportName.innerText = d.city;
 
@@ -271,14 +362,41 @@ select {
         }, 
         function( data ) {
           var x = JSON.parse(data);
-
+          links = []; arcLines = [];
+          d3.select('.arcs').remove();
+          d3.select('.flyers').remove();
+          
           for(var i = 0; i < x.length; i++){
-            var line = d3.svg.line();
-            //line.interpolate();
-            svg.select(".traffic").attr("d", line);
+            var ap = x[i];
+            var p1 = projection([parseFloat(ap.longitude1),parseFloat(ap.latitude1)]);
+            var p2 = projection([parseFloat(ap.longitude2),parseFloat(ap.latitude2)]);
+            links.push({
+              source: [parseFloat(ap.longitude1),parseFloat(ap.latitude1)],
+              target: [parseFloat(ap.longitude2),parseFloat(ap.latitude2)]
+            });
           }
 
-          svg.selectAll("path.traffic").append("path").datum([])
+          links.forEach(function(e,i,a) {
+            var feature =   { "type": "Feature", "geometry": { "type": "LineString", "coordinates": [e.source,e.target] }}
+            arcLines.push(feature)
+          });
+
+          svg.append("g").attr("class","arcs")
+            .selectAll("path.flights").data(arcLines)
+            .enter().append("path")
+            .attr("class","arc")
+            .attr("d",path);
+
+          svg.append("g").attr("class","flyers")
+            .selectAll("path.flightscurved").data(links)
+            .enter().append("path")
+            .attr("class","flyer")
+            .attr("d", function(d) { return traffic(flying_arc(d)); })
+            .attr("opacity", function(d) {
+              return fade_at_edge(d)
+            });
+
+          redraw();
       });
 
     }
