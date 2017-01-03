@@ -16,7 +16,6 @@
 
 </style>
 <svg id="barchart" width="960" height="500"></svg>
-<script src="https://d3js.org/d3.v4.min.js"></script>
 <script>
 
 window.addEventListener('load',function(){
@@ -25,8 +24,8 @@ window.addEventListener('load',function(){
       width = +svg.attr("width") - margin.left - margin.right,
       height = 450;
 
-  var x = d3.scaleBand().rangeRound([0, width]).padding(0.1),
-      y = d3.scaleLinear().rangeRound([height, 0]);
+  var x = d3.scale.ordinal().rangeRoundBands([0, width],0.1),
+      y = d3.scale.linear().range([height, 0]);
 
   var g = svg.append("g")
       .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
@@ -38,16 +37,27 @@ window.addEventListener('load',function(){
     if (error) throw error;
 
     x.domain(data.map(function(d) { return d.letter; }));
+
+    var xAxis = d3.svg.axis()
+      .scale(x)
+      .orient("bottom");
+
+    var yAxis = d3.svg.axis()
+      .scale(y)
+      .orient("left")
+      .ticks(10);
+
+
     y.domain([0, d3.max(data, function(d) { return d.frequency; })]);
 
     g.append("g")
         .attr("class", "axis axis--x")
         .attr("transform", "translate(0," + height + ")")
-        .call(d3.axisBottom(x));
+        .call(xAxis);
 
     g.append("g")
         .attr("class", "axis axis--y")
-        .call(d3.axisLeft(y).ticks(10, "%"))
+        .call(yAxis)
       .append("text")
         .attr("transform", "rotate(-90)")
         .attr("y", 6)
@@ -61,7 +71,7 @@ window.addEventListener('load',function(){
         .attr("class", "bar")
         .attr("x", function(d) { return x(d.letter); })
         .attr("y", function(d) { return y(d.frequency); })
-        .attr("width", x.bandwidth())
+        .attr("width", x.rangeBand())
         .attr("height", function( d ) { return height - y(d.frequency); });
   });
 });
