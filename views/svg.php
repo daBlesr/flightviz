@@ -18,7 +18,7 @@
 }
 .flyers {
   /*stroke-width:2;*/
-  opacity: 0.6;
+  opacity: 0.9;
   stroke: red; 
 }
 .arc, .flyer {
@@ -104,8 +104,8 @@ select {
 
     var links = [], arcLines = [];
 
-    var airportTooltip = d3.select("body").append("div").attr("class", "airportTooltip"),
-    airportList = d3.select("body").append("select").attr("name", "airports");
+    var airportTooltip = d3.select("#globe").append("div").attr("class", "airportTooltip"),
+    airportList = d3.select("#globe").append("select").attr("name", "airports");
 
     var airports, flight_counts;
 
@@ -113,13 +113,13 @@ select {
     var analysis = document.getElementById('analysis');
 
     queue()
-    .defer(d3.json, "world-110m.json")
-    .defer(d3.tsv, "world-country-names.tsv")
-    .defer(d3.json, "query.php?q=airports&a=1000")
+    .defer(d3.json, "<?php echo $_GLOBALS['BASE_URL'];?>/assets/world-110m.json")
+    .defer(d3.tsv, "<?php echo $_GLOBALS['BASE_URL'];?>/assets/world-country-names.tsv")
+    .defer(d3.json, "<?php echo $_GLOBALS['BASE_URL'];?>/controllers/query.php?q=airports&a=1000")
     .await(loadFlightData);
 
     function loadFlightData(error, world, countryData, airports){
-      $.post("query.php?q=flights-by-airport",{
+      $.post("<?php echo $_GLOBALS['BASE_URL'];?>/controllers/query.php?q=flights-by-airport",{
           "airports": airports.map(function(airport) {
             return airport.airport;
           })
@@ -270,7 +270,6 @@ select {
             fill: "green",
             r: airportRadius(d.total_traffic) * 2
           });
-          updateAirportSelection(d, airports);
         })
         .on("mouseout", function(d) {
           airportTooltip.style("opacity", 0)
@@ -283,6 +282,9 @@ select {
         .on("mousemove", function(d) {
           airportTooltip.style("left", (d3.event.pageX + 7) + "px")
           .style("top", (d3.event.pageY - 15) + "px");
+        })
+        .on('click',function(d){
+          updateAirportSelection(d, airports);
         });
 
       
@@ -340,7 +342,7 @@ select {
     function updateAirportSelection(d, airports){
       airportName.innerText = d.city;
 
-      $.post("query.php?q=flights&iata="+d.airport,{
+      $.post("<?php echo $_GLOBALS['BASE_URL'];?>/controllers/query.php?q=flights&iata="+d.airport,{
           "airports": airports.map(function(airport) {
             return airport.airport;
           })

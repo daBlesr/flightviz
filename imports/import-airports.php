@@ -1,5 +1,5 @@
 <?php
-include_once('db.php');
+include_once('../controllers/db.php');
 
 $iter = 0;
 $myfile = fopen("airports.dat.txt", "r") or die("Unable to open file!");

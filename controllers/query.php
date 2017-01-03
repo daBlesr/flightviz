@@ -1,5 +1,5 @@
 <?php
-include_once('db.php');
+include_once('../controllers/db.php');
 
 
 switch($_GET['q']){
