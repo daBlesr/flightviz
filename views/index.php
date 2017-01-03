@@ -60,7 +60,7 @@ body{ overflow: hidden; }
 
 #delays{
   float:left;
-  height:100%;
+  height:450px;
   width: 960px;
 }
 
