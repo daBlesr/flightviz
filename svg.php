@@ -1,11 +1,11 @@
 <style type="text/css">
 
 .water {
-  fill: rgba(102, 204, 255,1);
+  fill: rgba(0, 0, 153,1);
 }
 
 .land {
-  fill: rgb(255, 153, 102);
+  fill: rgb(0, 77, 0);
   stroke: #FFF;
   stroke-width: 0.7px;
 }
@@ -19,7 +19,7 @@
 .flyers {
   /*stroke-width:2;*/
   opacity: 0.6;
-  stroke: green; 
+  stroke: red; 
 }
 .arc, .flyer {
   stroke-linejoin: round;
@@ -28,8 +28,8 @@
 
 select {
   position: absolute;
-  top: 20px;
-  left: 580px;
+  top: 30px;
+  left: 960px;
   border: solid #ccc 1px;
   padding: 3px;
   box-shadow: inset 1px 1px 2px #ddd8dc;
