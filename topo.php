@@ -16,10 +16,13 @@ h1 {
 <script src="//d3js.org/d3.v3.min.js"></script>
 <script src="//d3js.org/queue.v1.min.js"></script>
 <script src="//d3js.org/topojson.v1.min.js"></script>
+<script src="jquery-3.1.1.min.js"></script>
 <script>
 
 var width = 960,
     height = 960;
+
+var scale0 = (width / 2 - 20);
 
 var projection = d3.geo.orthographic()
     .translate([width / 2, height / 2])
@@ -42,7 +45,7 @@ queue()
     .defer(d3.tsv, "world-country-names.tsv")
     .await(ready);
 
-function x(world, names, airports){
+function x(world, names, airports, flights){
   var globe = {type: "Sphere"},
       land = topojson.feature(world, world.objects.land),
       countries = topojson.feature(world, world.objects.countries).features,
@@ -59,30 +62,66 @@ function x(world, names, airports){
   });
 
   function redraw(airports){
-  c.clearRect(0, 0, width, height);
-  c.fillStyle = "#ccc", c.beginPath(), path(land), c.fill();
-  c.strokeStyle = "#fff", c.lineWidth = .5, c.beginPath(), path(borders), c.stroke();
-  c.strokeStyle = "#000", c.lineWidth = 2, c.beginPath(), path(globe), c.stroke();
 
-  circles=[];
-  var m = 0;
-  for(var i = 0; i < airports.length; i++){
-    if(airports[i].total_traffic > m) m = airports[i].total_traffic;
-  }
+    function mousedownAirport(d){
+      console.log(d);
+    }
 
-  for(var i = 0; i < airports.length; i++){
-    circles.push(d3.geo.circle().angle(airports[i].total_traffic / m).origin([parseFloat(airports[i].longitude), parseFloat(airports[i].latitude)])());
-  }
+    c.clearRect(0, 0, width, height);
 
-  c.beginPath();
-  path({type: "GeometryCollection", geometries: circles});
-  c.fillStyle = "rgba(0,100,0,.5)";
-  c.fill();
-  c.lineWidth = .2;
-  c.strokeStyle = "#000";
-  c.stroke();
+    c.fillStyle = "rgba(102, 204, 255,0.5)", c.beginPath(), path(globe), c.fill();
+    c.fillStyle = "rgb(255, 153, 102)", c.beginPath(), path(land), c.fill();
+    c.strokeStyle = "#fff", c.lineWidth = .5, c.beginPath(), path(borders), c.stroke();
 
-  
+    var m = 0;
+    for(var i = 0; i < flights.length; i++){
+      if(flights[i].total_traffic > m) m = flights[i].total_traffic;
+    }
+    var coordinates = [];
+
+
+    for(var i = 0; i < flights.length; i++){
+      c.strokeStyle = "red", c.lineWidth = flights[i].total_traffic / m, c.beginPath();
+      var flight = flights[i];
+
+      for(var j = 0; j < airports.length; j++){
+        if(airports[j].airport == flight.dest){
+          airp1 = airports[j];
+        }
+        if(airports[j].airport == flight.dest2){
+          airp2 = airports[j];
+        }
+      }
+      path({
+        type: "LineString", 
+        coordinates: [
+          [parseFloat(airp1.longitude), parseFloat(airp1.latitude)],
+          [parseFloat(airp2.longitude), parseFloat(airp2.latitude)]
+        ]
+      });
+      c.stroke();
+    }
+
+    circles=[];
+    var m = 0;
+    for(var i = 0; i < airports.length; i++){
+      if(airports[i].total_traffic > m) m = airports[i].total_traffic;
+    }
+
+    for(var i = 0; i < airports.length; i++){
+      circles.push(
+        d3.geo.circle()
+          .angle(airports[i].total_traffic / m)
+          .origin([parseFloat(airports[i].longitude), parseFloat(airports[i].latitude)])());
+    }
+
+    c.beginPath();
+    path({type: "GeometryCollection", geometries: circles});
+    c.fillStyle = "rgba(0,100,0,.5)";
+    c.fill();
+    c.lineWidth = .2;
+    c.strokeStyle = "#000";
+    c.stroke();
 }
 
   dragBehaviour = d3.behavior.drag()
@@ -105,14 +144,22 @@ function x(world, names, airports){
         if (rotation[0] >= 180) rotation[0] -= 360;
         projection.rotate(rotation);
 
-        //var url = "query.php?q=airports";
-        //d3.json(url, function (json) {
-        //  redraw(json);
-        //});
         redraw(airports);
     });
 
-  d3.select("body").select('canvas').call(dragBehaviour);
+    function zoomed() {
+      projection.scale(zoom.scale());
+      redraw(airports);
+    }
+
+
+    var zoom = d3.behavior.zoom()
+      .translate([width / 2, height / 2])
+      .scale(scale0)
+      .scaleExtent([scale0, 8 * scale0])
+      .on("zoom", zoomed);
+
+  d3.select("body").select('canvas').call(dragBehaviour).call(zoom).call(zoom.event);
   
 
   redraw(airports);
@@ -120,9 +167,16 @@ function x(world, names, airports){
 
 function ready(error, world, names) {
   if (error) throw error;
-  var url = "query.php?q=airports";
+  var url = "query.php?q=airports&a=20";
   d3.json(url, function (json) {
-    x(world, names, json);
+    $.post("query.php?q=flights-by-airport",{
+        "airports": json.map(function(airport) {
+          return airport.airport;
+        })
+      }, 
+      function( data ) {
+        x(world, names, json, JSON.parse(data));
+      });
   });
   
 }
