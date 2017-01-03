@@ -64,6 +64,18 @@ body{ overflow: hidden; }
   width: 960px;
 }
 
+#leftAirport{
+  width: 50%;
+  background-color: red;
+  height: 100%;
+  float:left;
+}
+#rightAirport{
+  width:50%;
+  height: 100%;
+  float: left;
+  background-color: blue;
+}
 
 </style>
 
@@ -77,7 +89,14 @@ body{ overflow: hidden; }
 
   <div id="globe" class = "tabcontent"> <?php include('svg.php');?></div>
   <div id="delays" class = "tabcontent"> <?php include('delays.php');?></div>
-  <div id="rightpanel"> <h1 id="airportName"></h1></div> 
+  <div id="rightpanel">
+    <div id="leftAirport">
+      <h1 id="airportName"></h1>
+    </div> 
+    <div id="rightAirport">
+      <h1 id="airportName2"></h1>
+    </div> 
+  </div>
 </div>
 
 <script>

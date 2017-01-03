@@ -104,8 +104,7 @@ select {
 
     var airports, flight_counts;
 
-
-    var analysis = document.getElementById('analysis');
+    var compareToAirport = false;
 
     queue()
     .defer(d3.json, "<?php echo $_GLOBALS['BASE_URL'];?>/assets/world-110m.json")
@@ -279,12 +278,14 @@ select {
           .style("top", (d3.event.pageY - 15) + "px");
         })
         .on('click',function(d){
+          compareToAirport = d.airport;
           updateAirportSelection(d, airports);
         })
-        .on("contextmenu", function (d, i) {
-            d3.event.preventDefault();
-           
-           console.log(d,i);
+        .on("contextmenu", function(d) {
+          d3.event.preventDefault();
+          if(compareToAirport && compareToAirport != d.airport){
+            airportName2.innerText = d.city + ": " + d.country;
+          }
         });
 
       
