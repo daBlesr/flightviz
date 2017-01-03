@@ -1,13 +1,3 @@
-<!DOCTYPE html>
-
-<head>
-<meta charset="utf-8">
-<title>Earth globe</title>
-<script src="d3.v3.min.js"></script>
-<script src="topojson.v1.min.js"></script>
-<script src="queue.v1.min.js"></script>
-<script src="jquery-3.1.1.min.js"></script>
-</head>
 <style type="text/css">
 
 .water {
@@ -27,17 +17,14 @@
   stroke-width: 3;
 }
 .flyers {
-  stroke-width:2;
-  opacity: .6;
-  stroke: darkred; 
+  /*stroke-width:2;*/
+  opacity: 0.6;
+  stroke: green; 
 }
 .arc, .flyer {
   stroke-linejoin: round;
   fill:none;
 }
-  .arc { }
-  .flyer { }
-  .flyer:hover { }
 
 select {
   position: absolute;
@@ -63,8 +50,8 @@ select {
 
 </style>
 
-  <svg id="svg" style="float:left;"></svg>
-  <div id="analysis" style="float:left;width: 800px; height: 300px">
+  <svg id="svg"></svg>
+  <div id="analysis">
   <h1 id="airportName"></h1>
 
   </div>
@@ -100,11 +87,13 @@ select {
       .interpolate("cardinal")
       .tension(.0);
 
+    var skyScale = 1.1;
+
     var sky = d3.geo.orthographic()
     .translate([width / 2, height / 2])
     .clipAngle(90)
     .rotate([0, 0])
-    .scale(300);
+    .scale((width / 2 - 20) * skyScale);
 
     //Adding water
 
@@ -126,7 +115,7 @@ select {
     queue()
     .defer(d3.json, "world-110m.json")
     .defer(d3.tsv, "world-country-names.tsv")
-    .defer(d3.json, "query.php?q=airports&a=100")
+    .defer(d3.json, "query.php?q=airports&a=200")
     .await(loadFlightData);
 
     function loadFlightData(error, world, countryData, airports){
@@ -163,7 +152,8 @@ select {
           .attr("d", function(d) { return traffic(flying_arc(d)) })
           .attr("opacity", function(d) {
             return fade_at_edge(d)
-          });
+          })
+          .attr("stroke-width",function(d){return Math.round(d.traffic * 4) + 1;});
 
         redrawAirports();
       }
@@ -191,8 +181,9 @@ select {
       //Drawing countries on the globe
 
       function zoomed() {
+        //console.log(zoom.scale(), zoom2.scale());
         projection.scale(zoom.scale());
-        sky.scale(zoom2.scale());
+        sky.scale(zoom.scale() * skyScale);
         redraw();
       }
 
@@ -200,12 +191,6 @@ select {
         .translate([width / 2, height / 2])
         .scale(scale0)
         .scaleExtent([scale0, 8 * scale0])
-        .on("zoom", zoomed);
-
-      var zoom2 = d3.behavior.zoom()
-        .translate([width / 2, height / 2])
-        .scale(scale0 * 1.2)
-        .scaleExtent([scale0 * 1.2, 8 * 1.2 * scale0])
         .on("zoom", zoomed);
 
       var globe = svg.selectAll("path")
@@ -366,26 +351,27 @@ select {
           d3.select('.arcs').remove();
           d3.select('.flyers').remove();
           
+          max_traffic = 0;
+          for(var i = 0; i < x.length; i++){
+            if(parseFloat(x[i].total_traffic) > max_traffic) max_traffic = parseFloat(x[i].total_traffic);
+          }
+
           for(var i = 0; i < x.length; i++){
             var ap = x[i];
             var p1 = projection([parseFloat(ap.longitude1),parseFloat(ap.latitude1)]);
             var p2 = projection([parseFloat(ap.longitude2),parseFloat(ap.latitude2)]);
             links.push({
               source: [parseFloat(ap.longitude1),parseFloat(ap.latitude1)],
-              target: [parseFloat(ap.longitude2),parseFloat(ap.latitude2)]
+              target: [parseFloat(ap.longitude2),parseFloat(ap.latitude2)],
+              traffic: parseFloat(ap.total_traffic) / max_traffic,
             });
           }
 
           links.forEach(function(e,i,a) {
-            var feature =   { "type": "Feature", "geometry": { "type": "LineString", "coordinates": [e.source,e.target] }}
+            var feature =   { "type": "Feature", "geometry": { "type": "LineString", "coordinates": [e.source,e.target]}}
             arcLines.push(feature)
           });
 
-          svg.append("g").attr("class","arcs")
-            .selectAll("path.flights").data(arcLines)
-            .enter().append("path")
-            .attr("class","arc")
-            .attr("d",path);
 
           svg.append("g").attr("class","flyers")
             .selectAll("path.flightscurved").data(links)
