@@ -77,7 +77,7 @@ body{ overflow: hidden; }
 
   <div id="globe" class = "tabcontent"> <?php include('svg.php');?></div>
   <div id="delays" class = "tabcontent"> <?php include('delays.php');?></div>
-  <div id="rightpanel"> Rightpanel </div> 
+  <div id="rightpanel"> <h1 id="airportName"></h1></div> 
 </div>
 
 <script>
