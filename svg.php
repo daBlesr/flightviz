@@ -87,7 +87,7 @@ select {
       .interpolate("cardinal")
       .tension(.0);
 
-    var skyScale = 1.1;
+    var skyScale = 1.2;
 
     var sky = d3.geo.orthographic()
     .translate([width / 2, height / 2])
@@ -115,7 +115,7 @@ select {
     queue()
     .defer(d3.json, "world-110m.json")
     .defer(d3.tsv, "world-country-names.tsv")
-    .defer(d3.json, "query.php?q=airports&a=200")
+    .defer(d3.json, "query.php?q=airports&a=1000")
     .await(loadFlightData);
 
     function loadFlightData(error, world, countryData, airports){
@@ -153,7 +153,7 @@ select {
           .attr("opacity", function(d) {
             return fade_at_edge(d)
           })
-          .attr("stroke-width",function(d){return Math.round(d.traffic * 4) + 1;});
+          .attr("stroke-width",function(d){return Math.round(d.traffic * 8) + 1;});
 
         redrawAirports();
       }
