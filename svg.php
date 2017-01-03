@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+
 <head>
 <meta charset="utf-8">
 <title>Earth globe</title>
@@ -62,7 +62,7 @@ select {
 }
 
 </style>
-<body>
+
   <svg id="svg" style="float:left;"></svg>
   <div id="analysis" style="float:left;width: 800px; height: 300px">
   <h1 id="airportName"></h1>
@@ -403,6 +403,3 @@ select {
   });
 
   </script>
-
-</body>
-</html>
