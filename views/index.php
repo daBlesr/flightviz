@@ -13,7 +13,7 @@
 body{ overflow: hidden; }
 
 #leftpanel{
-  background-color: #2D3E4E;
+  background-color: white;
   color: #D6E2EE ;
   width: 200px;
   height: 100%;
@@ -39,7 +39,7 @@ body{ overflow: hidden; }
 }
 
 #globe{
-  background-image: url("<?php echo $_GLOBALS['BASE_URL'];?>/assets/bg.jpg");
+  background-color: white;
   float:left;
   height:100%;
   width: 960px;
@@ -47,7 +47,7 @@ body{ overflow: hidden; }
 
 #rightpanel{
   top: 0px;
-  background-color: #2D3E4E;
+  background-color: white;
   color: #D6E2EE ;
   width: calc(100% - 1160px);
   height:100%;
@@ -66,7 +66,6 @@ body{ overflow: hidden; }
 
 #leftAirport{
   width: 50%;
-  background-color: red;
   height: 100%;
   float:left;
 }
@@ -74,7 +73,6 @@ body{ overflow: hidden; }
   width:50%;
   height: 100%;
   float: left;
-  background-color: blue;
 }
 
 </style>

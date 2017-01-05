@@ -1,12 +1,12 @@
 <style type="text/css">
 
 .water {
-  fill: rgba(0, 0, 153,1);
+  fill:   #cce0ff;
 }
 
 .land {
-  fill: rgb(0, 77, 0);
-  stroke: #FFF;
+  fill:  #4d94ff;
+  stroke: #001433;
   stroke-width: 0.7px;
 }
 
@@ -16,6 +16,14 @@
   /*stroke-width:2;*/
   opacity: 0.9;
   stroke: red; 
+}
+
+.domestic {
+  stroke: green !important;
+}
+.straight {
+  stroke: yellow !important;
+  opacity: 1;
 }
 
 .flyer {
@@ -175,7 +183,6 @@ select {
       //Drawing countries on the globe
 
       function zoomed() {
-        //console.log(zoom.scale(), zoom2.scale());
         projection.scale(zoom.scale());
         sky.scale(zoom.scale() * skyScale);
         redraw();
@@ -283,9 +290,13 @@ select {
         })
         .on("contextmenu", function(d) {
           d3.event.preventDefault();
-          if(compareToAirport && compareToAirport != d.airport){
-            airportName2.innerText = d.city + ": " + d.country;
+          if(d.country != "United States"){
+            alert("Airport must be within USA");
           }
+
+          d3.json("<?php echo $_GLOBALS['BASE_URL'];?>/controllers/query.php?q=connections-to-airport&from="+compareToAirport+"&to="+d.airport, function(data){
+            showTransferLines(data, compareToAirport, d.airport);
+          });
         });
 
       
@@ -351,7 +362,9 @@ select {
         function( data ) {
           var x = JSON.parse(data);
           links = [];
+          
           d3.select('.flyers').remove();
+          d3.select('.flyer').remove();
           
           max_traffic = 0;
           for(var i = 0; i < x.length; i++){
@@ -362,8 +375,6 @@ select {
 
           for(var i = 0; i < x.length; i++){
             var ap = x[i];
-            var p1 = projection([parseFloat(ap.longitude1),parseFloat(ap.latitude1)]);
-            var p2 = projection([parseFloat(ap.longitude2),parseFloat(ap.latitude2)]);
             links.push({
               source: [parseFloat(ap.longitude1),parseFloat(ap.latitude1)],
               target: [parseFloat(ap.longitude2),parseFloat(ap.latitude2)],
@@ -383,15 +394,84 @@ select {
           svg.append("g").attr("class","flyers")
             .selectAll("path.flightscurved").data(links)
             .enter().append("path")
-            .attr("class","flyer")
-            .attr("d", function(d) { return traffic(flying_arc(d)); })
-            .attr("opacity", function(d) {
-              return fade_at_edge(d)
-            });
-
+            .attr("class","flyer");
           redraw();
       });
 
+    }
+
+    function showTransferLines(x, from, to){
+      d3.select('.flyers').remove();
+      ifl_flights = []; 
+      domestic_flights = [];
+      straight_flight = [];
+
+      max_traffic = 0;
+      for(var i = 0; i < x.length; i++){
+        if(parseFloat(x[i].total_traffic) > max_traffic) max_traffic = parseFloat(x[i].total_traffic);
+      }
+
+      d3.selectAll("circle").attr("fill","black");
+
+      d3.selectAll("circle").each(function(){
+        var f = d3.select(this);
+        
+        for(var i = 0; i < x.length; i++){
+          var airport_data = d3.select(this).datum();
+          var ap = x[i];
+          if(airport_data.airport == ap.transfer){
+            f.attr("fill","red").attr("opacity","0.9");
+            console.log(ap);
+            if(ap.longitude2 != null){
+              ifl_flights.push({
+                source: [parseFloat(ap.longitude1),parseFloat(ap.latitude1)],
+                target: [parseFloat(ap.longitude2),parseFloat(ap.latitude2)],
+                traffic: parseFloat(ap.total_traffic) / max_traffic,
+              });
+
+              domestic_flights.push({
+                source: [parseFloat(ap.longitude2),parseFloat(ap.latitude2)],
+                target: [parseFloat(ap.longitude3),parseFloat(ap.latitude3)],
+                traffic: parseFloat(ap.total_traffic) / max_traffic,
+              });
+            }
+          } else if(ap.transfer == null && parseFloat(ap.total_traffic) > 0){
+            straight_flight.push({
+              source: [parseFloat(ap.longitude1),parseFloat(ap.latitude1)],
+              target: [parseFloat(ap.longitude3),parseFloat(ap.latitude3)],
+              traffic: parseFloat(ap.total_traffic) / max_traffic,
+            });
+          }
+        }
+
+      })
+
+      var g = svg.append("g").attr("class","flyers");
+
+      g.attr("class","flyers")
+        .selectAll("path.flightscurved").data(ifl_flights)
+        .enter().append("path")
+        .attr("class","flyer");
+
+
+      g.attr("class","flyers")
+        .selectAll("path.flightscurved").data(domestic_flights)
+        .enter().append("path")
+        .attr("class","flyer domestic");
+
+      /**
+      svg.append("g").attr("class","arcs")
+      .selectAll("path").data(arcLines)
+      .enter().append("path")
+      .attr("class","arc")
+      .attr("d",path)*/
+
+      g.attr("class","flyers")
+        .selectAll("path.flightscurved").data(straight_flight)
+        .enter().append("path")
+        .attr("class","flyer straight");
+
+      redraw();
     }
   });
 
