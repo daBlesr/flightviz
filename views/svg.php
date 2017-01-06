@@ -10,7 +10,12 @@
   stroke-width: 0.7px;
 }
 
-
+.arcs {
+  opacity:0.9;
+  stroke: green;
+  stroke-width: 3;
+  fill:none;
+}
 
 .flyers {
   /*stroke-width:2;*/
@@ -24,6 +29,7 @@
 .straight {
   stroke: yellow !important;
   opacity: 1;
+  stroke-width: 3px;
 }
 
 .flyer {
@@ -34,12 +40,11 @@
 select {
   position: absolute;
   top: 30px;
-  left: 960px;
+  left: 760px;
   border: solid #ccc 1px;
   padding: 3px;
   box-shadow: inset 1px 1px 2px #ddd8dc;
-  background-color: grey;
-  border: 1px solid black;
+  border: 1px solid #003d99;
 }
 
 .airportTooltip {
@@ -261,6 +266,7 @@ select {
         .attr("cx", function (d) { return projection([parseFloat(d.longitude),parseFloat(d.latitude)])[0]; })
         .attr("cy", function (d) { return projection([parseFloat(d.longitude),parseFloat(d.latitude)])[1]; })
         .attr("r", function (d) {return airportRadius(d.total_traffic); })
+        .attr("fill",'#003d99')
         .on("mouseover", function(d) {
           airportTooltip.text((d.city + ": " + d.name).replace("Intl",""))
           .style("left", (d3.event.pageX + 7) + "px")
@@ -276,7 +282,7 @@ select {
           airportTooltip.style("opacity", 0)
           .style("display", "none");
           d3.select(this).attr({
-            fill: "black",
+            fill: "#003d99",
             r: airportRadius(d.total_traffic)
           });
         })
@@ -352,7 +358,6 @@ select {
 
 
     function updateAirportSelection(d, airports){
-      airportName.innerText = d.city;
 
       $.post("<?php echo $_GLOBALS['BASE_URL'];?>/controllers/query.php?q=flights&iata="+d.airport,{
           "airports": airports.map(function(airport) {
@@ -365,13 +370,14 @@ select {
           
           d3.select('.flyers').remove();
           d3.select('.flyer').remove();
+          d3.select('.arcs').remove();
           
           max_traffic = 0;
           for(var i = 0; i < x.length; i++){
             if(parseFloat(x[i].total_traffic) > max_traffic) max_traffic = parseFloat(x[i].total_traffic);
           }
 
-          d3.selectAll("circle").attr("fill","black");
+          d3.selectAll("circle").attr("fill","#003d99");
 
           for(var i = 0; i < x.length; i++){
             var ap = x[i];
@@ -402,6 +408,7 @@ select {
 
     function showTransferLines(x, from, to){
       d3.select('.flyers').remove();
+      d3.select('.arcs').remove();
       ifl_flights = []; 
       domestic_flights = [];
       straight_flight = [];
@@ -411,7 +418,7 @@ select {
         if(parseFloat(x[i].total_traffic) > max_traffic) max_traffic = parseFloat(x[i].total_traffic);
       }
 
-      d3.selectAll("circle").attr("fill","black");
+      d3.selectAll("circle").attr("fill","#003d99");
 
       d3.selectAll("circle").each(function(){
         var f = d3.select(this);
@@ -421,19 +428,24 @@ select {
           var ap = x[i];
           if(airport_data.airport == ap.transfer){
             f.attr("fill","red").attr("opacity","0.9");
-            console.log(ap);
             if(ap.longitude2 != null){
               ifl_flights.push({
                 source: [parseFloat(ap.longitude1),parseFloat(ap.latitude1)],
                 target: [parseFloat(ap.longitude2),parseFloat(ap.latitude2)],
                 traffic: parseFloat(ap.total_traffic) / max_traffic,
               });
-
+              /**
               domestic_flights.push({
                 source: [parseFloat(ap.longitude2),parseFloat(ap.latitude2)],
                 target: [parseFloat(ap.longitude3),parseFloat(ap.latitude3)],
                 traffic: parseFloat(ap.total_traffic) / max_traffic,
-              });
+              });*/
+
+              var feature =   { "type": "Feature", "geometry": { "type": "LineString", "coordinates": [
+                [parseFloat(ap.longitude2),parseFloat(ap.latitude2)],
+                [parseFloat(ap.longitude3),parseFloat(ap.latitude3)]
+              ] }};
+              domestic_flights.push(feature);
             }
           } else if(ap.transfer == null && parseFloat(ap.total_traffic) > 0){
             straight_flight.push({
@@ -446,32 +458,35 @@ select {
 
       })
 
-      var g = svg.append("g").attr("class","flyers");
+      if(domestic_flights.length == 0 && straight_flight.length == 0 && ifl_flights.length == 0){
+        alert('there is no 1 transfer path from ' + from + " to " + to);
+      } else{
+        var g = svg.append("g").attr("class","flyers");
 
-      g.attr("class","flyers")
-        .selectAll("path.flightscurved").data(ifl_flights)
-        .enter().append("path")
-        .attr("class","flyer");
+        g.attr("class","flyers")
+          .selectAll("path.flightscurved").data(ifl_flights)
+          .enter().append("path")
+          .attr("class","flyer");
 
+        /**
+        g.attr("class","flyers")
+          .selectAll("path.flightscurved").data(domestic_flights)
+          .enter().append("path")
+          .attr("class","flyer domestic");
+        */
+        svg.append("g").attr("class","arcs")
+          .selectAll("path.flights").data(domestic_flights)
+          .enter().append("path")
+          .attr("class","arc")
+          .attr("d",path);
 
-      g.attr("class","flyers")
-        .selectAll("path.flightscurved").data(domestic_flights)
-        .enter().append("path")
-        .attr("class","flyer domestic");
+        g.attr("class","flyers")
+          .selectAll("path.flightscurved").data(straight_flight)
+          .enter().append("path")
+          .attr("class","flyer straight");
 
-      /**
-      svg.append("g").attr("class","arcs")
-      .selectAll("path").data(arcLines)
-      .enter().append("path")
-      .attr("class","arc")
-      .attr("d",path)*/
-
-      g.attr("class","flyers")
-        .selectAll("path.flightscurved").data(straight_flight)
-        .enter().append("path")
-        .attr("class","flyer straight");
-
-      redraw();
+        redraw();
+      }
     }
   });
 

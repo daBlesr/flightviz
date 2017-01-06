@@ -18,6 +18,9 @@ switch($_GET['q']){
 	case 'connections-to-airport':
 		connectionsToAirport($_GET['from'], $_GET['to']);
 		break;
+	case 'compute-flight-delays-for-all-airports':
+		computeFlightDelaysForAllAirports();
+		break;
 }
 
 function getJSONFromQuery($query){
@@ -109,4 +112,14 @@ function connectionsToAirport($airport_from, $airport_to){
 				a1.IATA = ifl.origin and a3.IATA = ifl.dest
 		"
 	);
+}
+
+function computeFlightDelaysForAllAirports(){
+	getJSONFromQuery(
+		" SELECT AVG(flights.dep_delay) as delay, flights.origin, flights.fl_date, flights.origin_city_name, count(*) as c from flights, 
+				(SELECT origin, count(*) as c from flights group by origin order by c desc limit 100) as x
+			WHERE flights.origin = x.origin 
+		 	group by origin, fl_date order by origin, fl_date
+		"
+	); 
 }
