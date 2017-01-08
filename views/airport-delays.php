@@ -155,7 +155,7 @@ var delayChart = function(){
           .style("display", "block")
           .style("opacity", 1);
 
-        d3.select(this).style("stroke","#4da6ff");
+        d3.select(this).style("stroke","#4da6ff").style("stroke-width","6px");
 
         d3.selectAll("circle").each(function(){
           var f = d3.select(this);
@@ -164,7 +164,7 @@ var delayChart = function(){
           }
         });
       }).on("mouseout",function(d){
-        d3.select(this).style("stroke", function(d) { return transitionRGB(d.average / 100 * 5);});
+        d3.select(this).style("stroke", function(d) { return transitionRGB(d.average / 100 * 5);}).style("stroke-width","2px");;
       });
 
     airport.append("text")

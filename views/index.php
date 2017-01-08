@@ -57,6 +57,7 @@ body{ overflow: hidden; }
       <?php include('airport-delays.php');?>
     </div> 
     <div id="botView">
+      <?php include('carrier-information.php');?>
     </div> 
   </div>
 </div>

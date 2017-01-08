@@ -120,19 +120,8 @@ select {
     queue()
     .defer(d3.json, "<?php echo $_GLOBALS['BASE_URL'];?>/assets/world-110m.json")
     .defer(d3.tsv, "<?php echo $_GLOBALS['BASE_URL'];?>/assets/world-country-names.tsv")
-    .defer(d3.json, "<?php echo $_GLOBALS['BASE_URL'];?>/controllers/query.php?q=airports&a=1000")
-    .await(loadFlightData);
-
-    function loadFlightData(error, world, countryData, airports){
-      $.post("<?php echo $_GLOBALS['BASE_URL'];?>/controllers/query.php?q=flights-by-airport",{
-          "airports": airports.map(function(airport) {
-            return airport.airport;
-          })
-        }, 
-        function( data ) {
-          ready(error, world, countryData, airports, JSON.parse(data));
-      });
-    }
+    .defer(d3.json, "<?php echo $_GLOBALS['BASE_URL'];?>/controllers/query.php?q=airports&a=400")
+    .await(ready);
 
     //Main function
     function redrawAirports(){
@@ -163,7 +152,7 @@ select {
       redrawAirports();
     }
 
-    function ready(error, world, countryData, airports, flights) {
+    function ready(error, world, countryData, airports) {
 
       var airportById = {},
       countries = topojson.feature(world, world.objects.countries).features;
