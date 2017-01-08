@@ -11,7 +11,7 @@
 }
 
 .arcs {
-  opacity:0.9;
+  opacity:0.6;
   stroke: green;
   stroke-width: 3;
   fill:none;
@@ -82,8 +82,6 @@ select {
 
     var path = d3.geo.path()
     .projection(projection);
-
-    //SVG container
 
     var svg = d3.select("#svg")
     .attr("width", width)
@@ -366,6 +364,7 @@ select {
         }, 
         function( data ) {
           var x = JSON.parse(data);
+          dc.airportsUpdated(x, "dest");
           links = [];
           
           d3.select('.flyers').remove();
@@ -407,6 +406,7 @@ select {
     }
 
     function showTransferLines(x, from, to){
+      dc.airportsUpdated(x,"transfer");
       d3.select('.flyers').remove();
       d3.select('.arcs').remove();
       ifl_flights = []; 
@@ -424,7 +424,7 @@ select {
         var f = d3.select(this);
         
         for(var i = 0; i < x.length; i++){
-          var airport_data = d3.select(this).datum();
+          var airport_data = f.datum();
           var ap = x[i];
           if(airport_data.airport == ap.transfer){
             f.attr("fill","red").attr("opacity","0.9");
@@ -434,12 +434,6 @@ select {
                 target: [parseFloat(ap.longitude2),parseFloat(ap.latitude2)],
                 traffic: parseFloat(ap.total_traffic) / max_traffic,
               });
-              /**
-              domestic_flights.push({
-                source: [parseFloat(ap.longitude2),parseFloat(ap.latitude2)],
-                target: [parseFloat(ap.longitude3),parseFloat(ap.latitude3)],
-                traffic: parseFloat(ap.total_traffic) / max_traffic,
-              });*/
 
               var feature =   { "type": "Feature", "geometry": { "type": "LineString", "coordinates": [
                 [parseFloat(ap.longitude2),parseFloat(ap.latitude2)],
@@ -468,12 +462,6 @@ select {
           .enter().append("path")
           .attr("class","flyer");
 
-        /**
-        g.attr("class","flyers")
-          .selectAll("path.flightscurved").data(domestic_flights)
-          .enter().append("path")
-          .attr("class","flyer domestic");
-        */
         svg.append("g").attr("class","arcs")
           .selectAll("path.flights").data(domestic_flights)
           .enter().append("path")

@@ -1,86 +1,109 @@
 <?php
 include_once('../controllers/db.php');
-
+$c = 0;
 $firstline = true;
 $iter = 0;
-$myfile = fopen("700492732_T_ONTIME.csv", "r") or die("Unable to open file!");
-while (($line = fgets($myfile)) !== false) {
-	if(!$firstline){
+$path = 'C:/Users/s115426/Documents/visdata/';
+$files = [
+	'86207366_T_ONTIME.csv',
+	'86207366_T_ONTIME_1.csv',
+	'86207366_T_ONTIME_2.csv',
+	'86207366_T_ONTIME_3.csv',
+	'86207366_T_ONTIME_4.csv',
+	'86207366_T_ONTIME_5.csv',
+	'86207366_T_ONTIME_6.csv',
+	'86207366_T_ONTIME_7.csv',
+];
 
-		if($iter % 10000 == 0){
-			echo $iter . "\n";
-			$sql = "INSERT INTO flights (
-				fl_date,
-				airline_id,
-				carrier,
-				origin_airport_id,
-				origin_airport_seq_id,
-				origin_city_market_id,
-				origin,
-				origin_city_name,
-				dest_airport_id,
-				dest_airport_seq_id,
-				dest_city_market_id,
-				dest,
-				dest_city_name,
-				crs_dep_time,
-				dep_time,
-				dep_delay,
-				crs_arr_time,
-				arr_time,
-				arr_delay,
-				cancelled
-			) VALUES ";	
-		}
-		$sql .= "(";
-		$vals = explode(",",$line);
-		$sql .= '"' . $vals[0] . '",';
-		foreach($vals as $i => $val){
-			if($val == ''){
-				$vals[$i] = 0;
+foreach($files as $file){
+	$iter = 0;
+	$myfile = fopen($path . $file, "r") or die("Unable to open file!");
+	$firstline = true;
+	
+	$sql = "INSERT INTO flights (
+		fl_date,
+		airline_id,
+		carrier,
+		origin_airport_id,
+		origin_airport_seq_id,
+		origin_city_market_id,
+		origin,
+		origin_city_name,
+		dest_airport_id,
+		dest_airport_seq_id,
+		dest_city_market_id,
+		dest,
+		dest_city_name,
+		crs_dep_time,
+		dep_time,
+		dep_delay,
+		crs_arr_time,
+		arr_time,
+		arr_delay,
+		cancelled,
+		cancellation_code,
+		airtime,
+		distance
+	) VALUES ";	
+
+	while (($line = fgets($myfile)) !== false) {
+		if(!$firstline){
+
+			$sql .= "(";
+			$vals = str_getcsv( $line);
+			$sql .= '"' . implode('","',array_slice($vals,0,sizeof($vals) - 1)) . '"';
+			$sql .= "), ";
+			//var_dump($line, $vals, array_slice($vals,0,sizeof($vals) - 1));
+			if ($iter > 9999){
+				$sql = rtrim($sql, ", ") . ';';
+				if( $GLOBALS['conn']->query($sql) !== TRUE) {
+			    	echo "Error: ". $sql . "<br>" . $GLOBALS['conn']->error;
+			    	exit;
+				} else{
+					echo $c . PHP_EOL;
+					$iter = 0;
+					$sql = "INSERT INTO flights (
+						fl_date,
+						airline_id,
+						carrier,
+						origin_airport_id,
+						origin_airport_seq_id,
+						origin_city_market_id,
+						origin,
+						origin_city_name,
+						dest_airport_id,
+						dest_airport_seq_id,
+						dest_city_market_id,
+						dest,
+						dest_city_name,
+						crs_dep_time,
+						dep_time,
+						dep_delay,
+						crs_arr_time,
+						arr_time,
+						arr_delay,
+						cancelled,
+						cancellation_code,
+						airtime,
+						distance
+					) VALUES ";	
+				}
+			} else{
+				$iter++;
+				$c++;
 			}
 		}
-		$sql .= implode(",",array_slice($vals,1,sizeof($vals) - 2));
-		if($iter % 10000 < 9999){
-			$sql .= "), ";
-		} else{
-			$sql .= ");";
-		}
 
-		//"FL_DATE" 1
-		//,"AIRLINE_ID",2
-		//"CARRIER",3
-		//"ORIGIN_AIRPORT_ID",4
-		//"ORIGIN_AIRPORT_SEQ_ID",5
-		//"ORIGIN_CITY_MARKET_ID",6
-		//"ORIGIN",7
-		//"ORIGIN_CITY_NAME",8
-		//"DEST_AIRPORT_ID",9
-		//"DEST_AIRPORT_SEQ_ID",10
-		//"DEST_CITY_MARKET_ID",11
-		//"DEST",12
-		//"DEST_CITY_NAME",13
-		//"CRS_DEP_TIME",14
-		//"DEP_TIME",15
-		//"DEP_DELAY",16
-		//"CRS_ARR_TIME",17
-		//"ARR_TIME",18
-		//"ARR_DELAY",19
-		//"CANCELLED",20
-		
-
-		if ($iter % 10000 == 9999 && $GLOBALS['conn']->query($sql) !== TRUE) {
-		    echo "Error: " . $sql . "<br>" . $GLOBALS['conn']->error;
-		    exit;
-		}
-
-		$iter++;
+		$firstline = false;
 	}
-	$firstline = false;
+
+	if($iter > 0){
+		$sql = rtrim($sql, ", ") . ';';
+		if( $GLOBALS['conn']->query($sql) !== TRUE) {
+	    	echo "Error: ". $sql . "<br>" . $GLOBALS['conn']->error;
+	    	exit;
+		}
+	}
+
+	fclose($myfile);
 }
-$sql .= ");";
-if ($GLOBALS['conn']->query($sql) !== TRUE) {
-    echo "Error: " . $sql . "<br>" . $GLOBALS['conn']->error;
-    exit;
-}
-fclose($myfile);
