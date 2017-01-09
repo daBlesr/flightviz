@@ -19,6 +19,9 @@
   font-size: 14px;
   font-family: sans-serif;
 }
+.airport {
+  stroke-width: 12px;
+}
 
 </style>
 <svg id="delayChart" width="960" height="500"></svg>
@@ -84,28 +87,28 @@ function parseDate(d){
 
 var delayChart = function(){
 
-  svg = d3.select("#delayChart"),
-  margin = {top: 20, right: 80, bottom: 30, left: 50},
-  width = svg.attr("width") - margin.left - margin.right,
-  height = svg.attr("height") - margin.top - margin.bottom,
-  g = svg.append("g").attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+  var svg = d3.select("#delayChart");
+  var margin = {top: 20, right: 80, bottom: 30, left: 50};
+  var width = svg.attr("width") - margin.left - margin.right;
+  var height = svg.attr("height") - margin.top - margin.bottom;
+  var g = svg.append("g").attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
-  airportTooltip = d3.select("#ap").append("div").attr("class", "airportLineTooltip");
+  var airportTooltip = d3.select("#ap").append("div").attr("class", "airportLineTooltip");
 
-  x = d3.time.scale().range([0, width]),
-  y = d3.scale.linear().range([height, 0]);
+  var x = d3.time.scale().range([0, width]);
+  var y = d3.scale.linear().range([height, 0]);
 
-  xAxis = d3.svg.axis()
+  var xAxis = d3.svg.axis()
     .scale(x)
     .orient("bottom");
 
-  yAxis = d3.svg.axis()
+  var yAxis = d3.svg.axis()
     .scale(y)
     .orient("left")
     .ticks(10);
 
 
-  line = d3.svg.line()
+  var line = d3.svg.line()
     .interpolate("basis")
     .x(function(d) { return x(d.date); })
     .y(function(d) { return y(d.delay); });
@@ -160,11 +163,17 @@ var delayChart = function(){
         d3.selectAll("circle").each(function(){
           var f = d3.select(this);
           if(f.datum().airport == d.airport){
-            f.attr("fill",transitionRGB(d.average / 100 * 5)).attr("opacity","0.9");
+            f.attr("fill",transitionRGB(d.average / 100 * 5)).attr("stroke","blue");
           }
         });
       }).on("mouseout",function(d){
         d3.select(this).style("stroke", function(d) { return transitionRGB(d.average / 100 * 5);}).style("stroke-width","2px");;
+        d3.selectAll("circle").each(function(){
+          var f = d3.select(this);
+          if(f.datum().airport == d.airport){
+            f.attr("stroke",null);
+          }
+        });
       });
 
     airport.append("text")
@@ -187,6 +196,22 @@ delayChart.prototype.airportsUpdated = function(airports, prop){
 
   d3.json("<?php echo $_GLOBALS['BASE_URL'];?>/controllers/query.php?q=compute-flight-delays-airports&a="+airports_str, function(error, data) {
     this.drawData(data);
+  });
+}
+
+delayChart.prototype.globeAirportHovered = function(airport){
+  d3.selectAll('.line').each(function(d){
+    if(d.airport == airport.airport){
+      d3.select(this).style("stroke","#4da6ff").style("stroke-width","6px");
+    }
+  });
+}
+
+delayChart.prototype.globeAirportHoverCancelled = function(airport){
+  d3.selectAll('.line').each(function(d){
+    if(d.airport == airport.airport){
+      d3.select(this).style("stroke", function(d) { return transitionRGB(d.average / 100 * 5);}).style("stroke-width","2px");;
+    }
   });
 }
 

@@ -24,6 +24,9 @@ switch($_GET['q']){
 	case 'compute-flight-delays-airports':
 		computeFlightDelaysForAirports($_GET['a']);
 		break;
+	case 'compute-flight-carriers-for-all-airports':
+		computeFlightCarriersForAllAirports();
+		break;
 }
 
 function getJSONFromQuery($query){
@@ -115,11 +118,19 @@ function computeFlightDelaysForAirports($airports){
 }
 
 function computeFlightCarriersForAllAirports(){
+	/**
 	getJSONFromQuery(
-		" SELECT AVG(flights.dep_delay) as delay, flights.origin, flights.fl_date, flights.origin_city_name, count(*) as c from flights, 
-				(SELECT origin, count(*) as c from flights group by origin order by c desc limit 30) as x
-			WHERE flights.origin = x.origin 
-		 	group by origin, Month(fl_date) order by fl_date, origin
+		" 	SELECT flights.carrier, carriers.name, flights.origin, flights.origin_city_name, count(*) as c from flights, carriers
+		 	where flights.carrier = carriers.carrier 
+		 	group by origin, flights.carrier 
+		"
+	); 
+	*/
+	getJSONFromQuery(
+		" SELECT * from carriers,
+			(SELECT origin, count(*) as total from flights group by origin) as y, 
+			(SELECT flights.carrier, flights.origin, flights.origin_city_name, count(*) as c from flights group by origin, flights.carrier ) as x
+			WHERE x.carrier = carriers.carrier and y.origin = x.origin order by y.total desc, x.carrier asc
 		"
 	); 
 }

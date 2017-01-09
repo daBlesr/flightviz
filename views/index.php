@@ -41,7 +41,7 @@ body{ overflow: hidden; }
 
 #topView{
   width: 100%;
-  height: 50%;
+  height: 500px;
 }
 #botView{
   width:100%;

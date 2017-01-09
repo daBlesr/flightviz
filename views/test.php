@@ -35,7 +35,7 @@ d3.csv("data.csv", function(d, i, columns) {
   if (error) throw error;
   var keys = data.columns.slice(1);
 
-  console.log(data);
+  console.log(data, keys);
 
   data.sort(function(a, b) { return b.total - a.total; });
   x.domain(data.map(function(d) { return d.State; }));
@@ -51,7 +51,7 @@ d3.csv("data.csv", function(d, i, columns) {
     .data(function(d) { return d; })
     .enter().append("rect")
       .attr("x", function(d) { return x(d.data.State); })
-      .attr("y", function(d) { return y(d[1]); })
+      .attr("y", function(d) {console.log(d); return y(d[1]); })
       .attr("height", function(d) { return y(d[0]) - y(d[1]); })
       .attr("width", x.bandwidth());
 

@@ -264,6 +264,7 @@ select {
             fill: "green",
             r: airportRadius(d.total_traffic) * 2
           });
+          dc.globeAirportHovered(d);
         })
         .on("mouseout", function(d) {
           airportTooltip.style("opacity", 0)
@@ -272,6 +273,7 @@ select {
             fill: "#003d99",
             r: airportRadius(d.total_traffic)
           });
+          dc.globeAirportHoverCancelled(d);
         })
         .on("mousemove", function(d) {
           airportTooltip.style("left", (d3.event.pageX + 7) + "px")
