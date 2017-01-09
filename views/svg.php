@@ -265,6 +265,7 @@ select {
             r: airportRadius(d.total_traffic) * 2
           });
           dc.globeAirportHovered(d);
+          ci.globeAirportHovered(d);
         })
         .on("mouseout", function(d) {
           airportTooltip.style("opacity", 0)
@@ -274,6 +275,7 @@ select {
             r: airportRadius(d.total_traffic)
           });
           dc.globeAirportHoverCancelled(d);
+          ci.globeAirportHoverCancelled(d);
         })
         .on("mousemove", function(d) {
           airportTooltip.style("left", (d3.event.pageX + 7) + "px")
@@ -356,6 +358,7 @@ select {
         function( data ) {
           var x = JSON.parse(data);
           dc.airportsUpdated(x, "dest");
+          ci.airportsUpdated(x, "dest");
           links = [];
           
           d3.select('.flyers').remove();
@@ -398,6 +401,7 @@ select {
 
     function showTransferLines(x, from, to){
       dc.airportsUpdated(x,"transfer");
+      ci.airportsUpdated(x,"transfer");
       d3.select('.flyers').remove();
       d3.select('.arcs').remove();
       ifl_flights = []; 

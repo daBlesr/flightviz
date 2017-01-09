@@ -27,6 +27,9 @@ switch($_GET['q']){
 	case 'compute-flight-carriers-for-all-airports':
 		computeFlightCarriersForAllAirports();
 		break;
+	case 'compute-flight-carriers-airports':
+		computeFlightCarriersForAirports($_GET['a']);
+		break;
 }
 
 function getJSONFromQuery($query){
@@ -130,6 +133,18 @@ function computeFlightCarriersForAllAirports(){
 		" SELECT * from carriers,
 			(SELECT origin, count(*) as total from flights group by origin) as y, 
 			(SELECT flights.carrier, flights.origin, flights.origin_city_name, count(*) as c from flights group by origin, flights.carrier ) as x
+			WHERE x.carrier = carriers.carrier and y.origin = x.origin order by y.total desc, x.carrier asc
+		"
+	); 
+}
+
+function computeFlightCarriersForAirports($airports){
+	$airports = implode("','",explode(',',$airports));
+	getJSONFromQuery(
+		" SELECT * from carriers,
+			(SELECT origin, count(*) as total from flights where flights.origin IN ('$airports') group by origin) as y, 
+			(SELECT flights.carrier, flights.origin, flights.origin_city_name, count(*) as c from flights 
+				where flights.origin IN ('$airports') group by origin, flights.carrier ) as x
 			WHERE x.carrier = carriers.carrier and y.origin = x.origin order by y.total desc, x.carrier asc
 		"
 	); 

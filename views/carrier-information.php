@@ -1,47 +1,36 @@
-
+<style>
+.carrierTooltip {
+  position: absolute;
+  display: none;
+  pointer-events: none;
+  background: #fff;
+  padding: 5px;
+  text-align: left;
+  border: solid #ccc 1px;
+  color: #666;
+  font-size: 14px;
+  font-family: sans-serif;
+}
+</style>
 <svg id="carrierInfo" width="960" height="400"></svg>
+<div id="ca"></div>
 <script>
 
-/**
-function calculateCarrierInfo(data){
-  var carriers = [];
-  var barchartdata = [];
-
-  console.log(data);
-    
-  for(var i = 0; i < data.length; i++){
-    var d = data[i];
-    
-    if(carriers.indexOf(d.name) == -1){
-      carriers.push(d.name);
-    }
-
-    var found_array = barchartdata.filter(function( x ) {
-      return x.airport == d.origin;
-    });
-
-    if(found_array.length > 0){
-      found_array[0][d.name] = parseFloat(d.c);
-      found_array[0].total += parseFloat(d.c);
-    } else{
-      var obj = {};
-      obj.airport = d.origin;
-      obj.total = parseFloat(d.c);
-      obj[d.name] = parseFloat(d.c);
-      barchartdata.push(obj);
-    }
-  }
-
-  barchartdata.columns = carriers;
-  return barchartdata;
-}*/
+function transitionBlueColors(percentage){
+  var m1 = [230, 242, 255];
+  var m2 = [0, 89, 179];
+  
+  var red = m1[0] + (m2[0] - m1[0]) * percentage;
+  var green = m1[1] + (m2[1] - m1[1]) * percentage;
+  var blue = m1[2] + (m2[2] - m1[2]) * percentage;
+  
+  return "rgb(" + Math.round(red) + "," + Math.round(green) + "," + Math.round(blue) + ")";
+}
 
 function calculateCarrierInfo(data){
   var carriers = [];
   var barchartdata = [];
   var origins = [];
-
-  console.log(data);
     
   for(var i = 0; i < data.length; i++){
     var d = data[i];
@@ -54,15 +43,17 @@ function calculateCarrierInfo(data){
     }
 
     if(origins.indexOf(d.origin) == -1){
-      origins.push(d.origin);
+      origins.push({o: d.origin, c: d.origin_city_name});
     }
   }
 
   for(var i = 0; i < barchartdata.length; i++){
     for(var j = 0; j < origins.length; j++){
       barchartdata[i].push({
-        x: origins[j],
+        x: origins[j].o,
         y: 0,
+        carrier: barchartdata[i].carrier,
+        city: origins[j].c
       })
     }
   }
@@ -81,7 +72,6 @@ function calculateCarrierInfo(data){
   }
 
   barchartdata.columns = carriers;
-  console.log(barchartdata);
   return barchartdata;
 }
 
@@ -91,9 +81,8 @@ var Carrier = function(){
   var width = +svg.attr("width") - margin.left - margin.right;
   var height = +svg.attr("height") - margin.top - margin.bottom;
   var g = svg.append("g").attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-
+  var carrierTooltip = d3.select("#ca").append("div").attr("class", "carrierTooltip");
   var x = d3.scale.ordinal().rangeRoundBands([0, width], .05);
-
   var y = d3.scale.linear().rangeRound([height, 0]);
 
   var z = d3.scale.ordinal().range(["#98abc5", "#8a89a6", "#7b6888", "#6b486b", "#a05d56", "#d0743c", "#ff8c00"]);
@@ -107,14 +96,15 @@ var Carrier = function(){
     .orient("left")
     .ticks(null, "s");
 
-  redrawBarChart = function(data){
+  this.redrawBarChart = function(data){
+    g.selectAll('g').remove();
+    g.selectAll('.axis').remove();
+
     var data = calculateCarrierInfo(data);
     var keys = data.columns;
-    console.log(keys);
 
-    //data.sort(function(a, b) { return b.total - a.total; });
     var layers = d3.layout.stack()(data);
-    console.log(layers);
+
     x.domain(layers[0].map(function(d) { return d.x; }));
     y.domain([0, d3.max(layers[layers.length - 1], function(d) {return d.y0 + d.y; })]).nice();
     z.domain(keys);
@@ -130,7 +120,30 @@ var Carrier = function(){
       .attr("x", function(d) {return x(d.x); })
       .attr("y", function(d) {return y(d.y + d.y0); })
       .attr("height", function(d) { return y(d.y0) - y(d.y + d.y0); })
-      .attr("width", x.rangeBand());
+      .attr("width", x.rangeBand())
+      .attr("class","carrierbar")
+      .on("mouseover",function(d){
+        carrierTooltip.text(d.x +" ("+ d.city +"): " +d.carrier + " - " + d.y + " flights")
+          .style("left", (d3.event.pageX + 7) + "px")
+          .style("top", (d3.event.pageY - 15) + "px")
+          .style("display", "block")
+          .style("opacity", 1);
+
+        d3.selectAll("circle").each(function(){
+          var f = d3.select(this);
+          if(f.datum().airport == d.x){
+            f.attr("stroke","blue");
+          }
+        });
+      })
+      .on("mouseout",function(d){
+        d3.selectAll("circle").each(function(){
+          var f = d3.select(this);
+          if(f.datum().airport == d.x){
+            f.attr("stroke",null);
+          }
+        });
+      });
 
     g.append("g")
       .attr("class", "axis")
@@ -155,7 +168,7 @@ var Carrier = function(){
         .attr("fill", "#000")
         .attr("font-weight", "bold")
         .attr("text-anchor", "start")
-        .text("Population");
+        .text("Flights by carrier");
 
     var legend = g.append("g")
         .attr("font-family", "sans-serif")
@@ -178,12 +191,34 @@ var Carrier = function(){
         .attr("dy", "0.32em")
         .text(function(d) { return d; });
   }
-
-  d3.json("http://localhost/flightviz/controllers/query.php?q=compute-flight-carriers-for-all-airports", function(error, data) {
-    redrawBarChart(data);
-  });
 }
 
 var ci = new Carrier();
+d3.json("http://localhost/flightviz/controllers/query.php?q=compute-flight-carriers-for-all-airports", function(error, data) {
+  ci.redrawBarChart(data);
+});
 
+ci.airportsUpdated = function(airports, prop){
+  airports_str = airports.map(function(x){return x[prop]}).join(",");
+
+  d3.json("<?php echo $_GLOBALS['BASE_URL'];?>/controllers/query.php?q=compute-flight-carriers-airports&a="+airports_str, function(error, data) {
+    ci.redrawBarChart(data);
+  });
+}
+
+ci.globeAirportHovered = function(airport){
+  d3.selectAll('.carrierbar').each(function(d){
+    if(d.x == airport.airport){
+      d3.select(this).style("stroke","red");
+    }
+  });
+}
+
+ci.globeAirportHoverCancelled = function(airport){
+  d3.selectAll('.carrierbar').each(function(d){
+    if(d.x == airport.airport){
+      d3.select(this).style("stroke",null);
+    }
+  });
+}
 </script>
