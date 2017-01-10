@@ -16,17 +16,6 @@
 <div id="ca"></div>
 <script>
 
-function transitionBlueColors(percentage){
-  var m1 = [230, 242, 255];
-  var m2 = [0, 89, 179];
-  
-  var red = m1[0] + (m2[0] - m1[0]) * percentage;
-  var green = m1[1] + (m2[1] - m1[1]) * percentage;
-  var blue = m1[2] + (m2[2] - m1[2]) * percentage;
-  
-  return "rgb(" + Math.round(red) + "," + Math.round(green) + "," + Math.round(blue) + ")";
-}
-
 function calculateCarrierInfo(data){
   var carriers = [];
   var barchartdata = [];
@@ -35,15 +24,15 @@ function calculateCarrierInfo(data){
   for(var i = 0; i < data.length; i++){
     var d = data[i];
     
-    if(carriers.indexOf(d.name) == -1){
-      carriers.push(d.name);
+    if(carriers.indexOf(d.carrier) == -1){
+      carriers.push(d.carrier);
       var carrier_array = [];
-      carrier_array.carrier = d.name;
+      carrier_array.carrier = d.carrier;
       barchartdata.push(carrier_array);
     }
 
     if(origins.indexOf(d.origin) == -1){
-      origins.push({o: d.origin, c: d.origin_city_name});
+      origins.push({o: d.origin, c: d.origin_city_name, total: parseFloat(d.total)});
     }
   }
 
@@ -53,7 +42,8 @@ function calculateCarrierInfo(data){
         x: origins[j].o,
         y: 0,
         carrier: barchartdata[i].carrier,
-        city: origins[j].c
+        city: origins[j].c,
+        total: origins[j].total,
       })
     }
   }
@@ -61,7 +51,7 @@ function calculateCarrierInfo(data){
   for(var i = 0; i < data.length; i++){
     var d = data[i];
     for(var j = 0; j < barchartdata.length; j++){
-      if(barchartdata[j].carrier == d.name){
+      if(barchartdata[j].carrier == d.carrier){
         for(var m = 0; m < barchartdata[j].length; m++){
           if(barchartdata[j][m].x == d.origin){
             barchartdata[j][m].y = parseFloat(d.c);
@@ -72,6 +62,7 @@ function calculateCarrierInfo(data){
   }
 
   barchartdata.columns = carriers;
+  barchartdata.origins = origins;
   return barchartdata;
 }
 
@@ -85,7 +76,7 @@ var Carrier = function(){
   var x = d3.scale.ordinal().rangeRoundBands([0, width], .05);
   var y = d3.scale.linear().rangeRound([height, 0]);
 
-  var z = d3.scale.ordinal().range(["#98abc5", "#8a89a6", "#7b6888", "#6b486b", "#a05d56", "#d0743c", "#ff8c00"]);
+  var z = d3.scale.ordinal().range(["#e6f2ff", "#cce6ff", "#b3d9ff", "#99ccff", "#80bfff", "#66b3ff", "#4da6ff","#3399ff","#1a8cff","#0073e6","#004d99","#001a33"].reverse());
 
   var xAxis = d3.svg.axis()
     .scale(x)
@@ -104,9 +95,8 @@ var Carrier = function(){
     var keys = data.columns;
 
     var layers = d3.layout.stack()(data);
-
     x.domain(layers[0].map(function(d) { return d.x; }));
-    y.domain([0, d3.max(layers[layers.length - 1], function(d) {return d.y0 + d.y; })]).nice();
+    y.domain([0, d3.max(data.origins, function(d){return d.total;})]).nice();
     z.domain(keys);
 
     g.append("g")
@@ -123,7 +113,7 @@ var Carrier = function(){
       .attr("width", x.rangeBand())
       .attr("class","carrierbar")
       .on("mouseover",function(d){
-        carrierTooltip.text(d.x +" ("+ d.city +"): " +d.carrier + " - " + d.y + " flights")
+        carrierTooltip.text(d.x +" ("+ d.city +"): " +d.carrier + " - " + d.y.toLocaleString() + " / " + d.total.toLocaleString() + " flights")
           .style("left", (d3.event.pageX + 7) + "px")
           .style("top", (d3.event.pageY - 15) + "px")
           .style("display", "block")

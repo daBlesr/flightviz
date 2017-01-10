@@ -28,17 +28,16 @@
 <div id="ap"></div>
 <script>
 
+
 function transitionRGB(percentage){
-  if(percentage < 0.5){
-    var red = percentage * 255 * 2;
-    var green = 255;
-    var blue = 0;
-  } else{
-    var red = 255;
-    var green =  ( 1 - percentage ) * 255 * 2;
-    var blue = 0;
+  percentage = percentage / 12;
+  var g = ["#cce6ff", "#b3d9ff", "#99ccff", "#80bfff", "#66b3ff", "#4da6ff","#3399ff","#1a8cff","#0073e6","#004d99","#001a33"];
+  var result = Math.round(percentage * percentage * 10);
+  if(result > g.length - 1){
+    result = g.length - 1;
   }
-  return "rgb(" + Math.round(red) + "," + Math.round(green) + "," + Math.round(blue) + ")";
+  return g[result];
+
 }
 
 function calculateDelays(data){
@@ -150,7 +149,7 @@ var delayChart = function(){
     airport.append("path")
       .attr("class", "line")
       .attr("d", function(d) { return line(d.values); })
-      .style("stroke", function(d) { return transitionRGB(d.average / 100 * 5);})
+      .style("stroke", function(d) { return transitionRGB(d.average);})
       .on("mouseover", function(d){
         airportTooltip.text(d.id)
           .style("left", (d3.event.pageX + 7) + "px")
@@ -163,11 +162,11 @@ var delayChart = function(){
         d3.selectAll("circle").each(function(){
           var f = d3.select(this);
           if(f.datum().airport == d.airport){
-            f.attr("fill",transitionRGB(d.average / 100 * 5)).attr("stroke","blue");
+            f.attr("fill",transitionRGB(d.average / 100)).attr("stroke","blue");
           }
         });
       }).on("mouseout",function(d){
-        d3.select(this).style("stroke", function(d) { return transitionRGB(d.average / 100 * 5);}).style("stroke-width","2px");;
+        d3.select(this).style("stroke", function(d) { return transitionRGB(d.average);}).style("stroke-width","2px");;
         d3.selectAll("circle").each(function(){
           var f = d3.select(this);
           if(f.datum().airport == d.airport){
@@ -210,7 +209,7 @@ delayChart.prototype.globeAirportHovered = function(airport){
 delayChart.prototype.globeAirportHoverCancelled = function(airport){
   d3.selectAll('.line').each(function(d){
     if(d.airport == airport.airport){
-      d3.select(this).style("stroke", function(d) { return transitionRGB(d.average / 100 * 5);}).style("stroke-width","2px");;
+      d3.select(this).style("stroke", function(d) { return transitionRGB(d.average);}).style("stroke-width","2px");;
     }
   });
 }

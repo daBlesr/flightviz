@@ -104,7 +104,9 @@ function connectionsToAirport($airport_from, $airport_to){
 
 function computeFlightDelaysForAllAirports(){
 	getJSONFromQuery(
-		" SELECT AVG(flights.dep_delay) as delay, flights.origin, flights.fl_date, flights.origin_city_name, count(*) as c from flights 
+		" SELECT AVG(flights.dep_delay) as delay, flights.origin, flights.fl_date, flights.origin_city_name, count(*) as c from flights,
+			(SELECT origin FROM flights group by origin order by count(*) limit 20) as x
+			where x.origin = flights.origin
 		 	group by origin, Month(fl_date) order by fl_date, origin
 		"
 	); 
@@ -121,19 +123,12 @@ function computeFlightDelaysForAirports($airports){
 }
 
 function computeFlightCarriersForAllAirports(){
-	/**
 	getJSONFromQuery(
-		" 	SELECT flights.carrier, carriers.name, flights.origin, flights.origin_city_name, count(*) as c from flights, carriers
-		 	where flights.carrier = carriers.carrier 
-		 	group by origin, flights.carrier 
-		"
-	); 
-	*/
-	getJSONFromQuery(
-		" SELECT * from carriers,
+		" SELECT * from 
 			(SELECT origin, count(*) as total from flights group by origin) as y, 
+			(SELECT carrier, count(*) as total2 from flights group by carrier) as z, 
 			(SELECT flights.carrier, flights.origin, flights.origin_city_name, count(*) as c from flights group by origin, flights.carrier ) as x
-			WHERE x.carrier = carriers.carrier and y.origin = x.origin order by y.total desc, x.carrier asc
+			WHERE y.origin = x.origin and z.carrier = x.carrier order by y.total desc, z.total2 desc
 		"
 	); 
 }
@@ -141,11 +136,11 @@ function computeFlightCarriersForAllAirports(){
 function computeFlightCarriersForAirports($airports){
 	$airports = implode("','",explode(',',$airports));
 	getJSONFromQuery(
-		" SELECT * from carriers,
+		" SELECT * from 
 			(SELECT origin, count(*) as total from flights where flights.origin IN ('$airports') group by origin) as y, 
 			(SELECT flights.carrier, flights.origin, flights.origin_city_name, count(*) as c from flights 
 				where flights.origin IN ('$airports') group by origin, flights.carrier ) as x
-			WHERE x.carrier = carriers.carrier and y.origin = x.origin order by y.total desc, x.carrier asc
+			WHERE y.origin = x.origin order by y.total desc, x.carrier asc
 		"
 	); 
 }
