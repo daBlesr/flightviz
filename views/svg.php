@@ -159,6 +159,8 @@ select {
 
       //Adding countries to select
 
+      //airports.sort(function(a, b){return a.city > b.city});
+      //console.log(airports);
       airports.forEach(function(d) {
         airportById[d.airport] = d.airport;
         option = airportList.append("option");

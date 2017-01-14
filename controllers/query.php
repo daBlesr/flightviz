@@ -138,9 +138,10 @@ function computeFlightCarriersForAirports($airports){
 	getJSONFromQuery(
 		" SELECT * from 
 			(SELECT origin, count(*) as total from flights where flights.origin IN ('$airports') group by origin) as y, 
+			(SELECT carrier, count(*) as total2 from flights group by carrier) as z, 
 			(SELECT flights.carrier, flights.origin, flights.origin_city_name, count(*) as c from flights 
 				where flights.origin IN ('$airports') group by origin, flights.carrier ) as x
-			WHERE y.origin = x.origin order by y.total desc, x.carrier asc
+			WHERE y.origin = x.origin and z.carrier = x.carrier order by y.total desc, z.total2 desc
 		"
 	); 
 }
