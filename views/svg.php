@@ -27,7 +27,7 @@
   stroke:  red !important;
 }
 .straight {
-  stroke: green !important;
+  stroke: yellow !important;
   opacity: 1;
   stroke-width: 3px;
 }
