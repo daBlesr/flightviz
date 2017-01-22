@@ -12,7 +12,7 @@
 
 .arcs {
   opacity:0.6;
-  stroke:  red;
+  stroke: green;
   stroke-width: 3;
   fill:none;
 }
@@ -24,7 +24,7 @@
 }
 
 .domestic {
-  stroke:  red !important;
+  stroke: green !important;
 }
 .straight {
   stroke: yellow !important;
