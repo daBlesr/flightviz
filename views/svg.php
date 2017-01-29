@@ -292,7 +292,6 @@ select {
           if(d.country != "United States"){
             alert("Airport must be within USA");
           }
-
           d3.json("<?php echo $_GLOBALS['BASE_URL'];?>/controllers/query.php?q=connections-to-airport&from="+compareToAirport+"&to="+d.airport, function(data){
             showTransferLines(data, compareToAirport, d.airport);
           });
