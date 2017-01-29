@@ -173,6 +173,10 @@ var delayChart = function(){
             f.attr("stroke",null);
           }
         });
+      }).on("click",function(d){
+        d3.json("<?php echo $_GLOBALS['BASE_URL'];?>/controllers/query.php?q=compute-flight-delays-by-airline&a="+d.airport, function(error, data) {
+          this.drawData(data);
+        });
       });
 
     airport.append("text")
