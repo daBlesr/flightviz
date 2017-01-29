@@ -44,6 +44,11 @@ function calculateDelays(data){
     var origins = {};
     var delays = [];
     var airport_names = {};
+    if(data[0].hasOwnProperty('carrier')){
+      carrier = true;  
+    } else{
+      carrier = false;
+    }
     
   for(var i = 0; i < data.length; i++){
     var d = data[i];
@@ -67,13 +72,14 @@ function calculateDelays(data){
     origins[o].map(function(x){
       total += x.delay;
     });
-
-    delays.push({
+    var f = {
       id: o,
       values: origins[o],
       average : total / origins[o].length,
       airport : airport_names[o]
-    });
+    };
+    if(carrier){f.carrier = true};
+    delays.push(f);
   }
   return delays;
 }
@@ -85,7 +91,7 @@ function parseDate(d){
 }
 
 var delayChart = function(){
-
+  CLICKED_AIRPORT = undefined;
   var svg = d3.select("#delayChart");
   var margin = {top: 20, right: 80, bottom: 30, left: 50};
   var width = svg.attr("width") - margin.left - margin.right;
@@ -165,6 +171,10 @@ var delayChart = function(){
             f.attr("fill",transitionRGB(d.average / 100)).attr("stroke","blue");
           }
         });
+
+        if(d.hasOwnProperty('carrier')){
+          ci.globeCarrierHovered(d.airport, CLICKED_AIRPORT);
+        }
       }).on("mouseout",function(d){
         d3.select(this).style("stroke", function(d) { return transitionRGB(d.average);}).style("stroke-width","2px");;
         d3.selectAll("circle").each(function(){
@@ -173,7 +183,12 @@ var delayChart = function(){
             f.attr("stroke",null);
           }
         });
+
+        if(d.hasOwnProperty('carrier')){
+          ci.globeCarrierCancelled(d.airport);
+        }
       }).on("click",function(d){
+        CLICKED_AIRPORT = d.airport;
         d3.json("<?php echo $_GLOBALS['BASE_URL'];?>/controllers/query.php?q=compute-flight-delays-by-airline&a="+d.airport, function(error, data) {
           this.drawData(data);
         });

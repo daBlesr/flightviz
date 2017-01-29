@@ -127,7 +127,7 @@ function computeFlightDelaysForAirports($airports){
 
 function computeFlightDelaysByAirline($airport){
 	getJSONFromQuery(
-		" SELECT AVG(flights.dep_delay) as delay, flights.carrier as origin, flights.fl_date, flights.carrier as origin_city_name, count(*) as c from flights
+		" SELECT AVG(flights.dep_delay) as delay, flights.carrier as origin, flights.fl_date, flights.carrier as origin_city_name, carrier, count(*) as c from flights
 			WHERE flights.origin = '$airport'
 		 	group by carrier, MONTH(fl_date) order by fl_date, carrier
 		"

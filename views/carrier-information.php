@@ -76,7 +76,7 @@ var Carrier = function(){
   var x = d3.scale.ordinal().rangeRoundBands([0, width], .05);
   var y = d3.scale.linear().rangeRound([height, 0]);
 
-  var z = d3.scale.ordinal().range(["#e6f2ff", "#cce6ff", "#b3d9ff", "#99ccff", "#80bfff", "#66b3ff", "#4da6ff","#3399ff","#1a8cff","#0073e6","#004d99","#001a33"].reverse());
+  z = d3.scale.ordinal().range(["#e6f2ff", "#cce6ff", "#b3d9ff", "#99ccff", "#80bfff", "#66b3ff", "#4da6ff","#3399ff","#1a8cff","#0073e6","#004d99","#001a33"].reverse());
 
   var xAxis = d3.svg.axis()
     .scale(x)
@@ -86,6 +86,10 @@ var Carrier = function(){
     .scale(y)
     .orient("left")
     .ticks(null, "s");
+
+  this.recolorbar = function(d){
+    return z(d);
+  }
 
   this.redrawBarChart = function(data){
     g.selectAll('g').remove();
@@ -173,7 +177,21 @@ var Carrier = function(){
         .attr("x", width - 19)
         .attr("width", 19)
         .attr("height", 19)
-        .attr("fill", z);
+        .attr("fill", z)
+        .on("mouseover",function(d){
+           d3.selectAll('.carrierbar').each(function(x){
+            if(x.carrier == d){
+              d3.select(this).style("fill","red"); 
+            }
+          });
+        })
+        .on("mouseout",function(d){
+           d3.selectAll('.carrierbar').each(function(x){
+            if(x.carrier == d){
+              d3.select(this).style("fill",z(d)); 
+            }
+          });
+        });
 
     legend.append("text")
         .attr("x", width - 24)
@@ -208,6 +226,26 @@ ci.globeAirportHoverCancelled = function(airport){
   d3.selectAll('.carrierbar').each(function(d){
     if(d.x == airport.airport){
       d3.select(this).style("stroke",null);
+    }
+  });
+}
+
+ci.globeCarrierHovered = function(carrier, airport){
+  d3.selectAll('.carrierbar').each(function(d){
+    if(d.carrier == carrier){
+      if(d.x == airport){
+        d3.select(this).style("fill","yellow");   
+      } else{
+        d3.select(this).style("fill","red");   
+      }
+    }
+  });
+}
+
+ci.globeCarrierCancelled = function(carrier){
+  d3.selectAll('.carrierbar').each(function(d){
+    if(d.carrier == carrier){
+      d3.select(this).style("fill",ci.recolorbar(carrier)); 
     }
   });
 }
